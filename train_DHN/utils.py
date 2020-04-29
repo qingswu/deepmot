@@ -487,7 +487,7 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar', best_model_na
         shutil.copyfile(filename[:-4], best_model_name[:-4])
 
 
-def eval_acc(score, target, weight, th =0.5):
+def eval_acc(score, target, weight, th=0.5):
     """
     :param score: torch tensor, predicted score of shape [batch, H, W]
     :param target: torch tensor, ground truth value {0,1} of shape [batch, H, W]
@@ -495,9 +495,7 @@ def eval_acc(score, target, weight, th =0.5):
     :return: accuracy
     """
     acc = []
-    # count_tn = 0
-    # count_tp = 0
-    predicted = torch.zeros_like(score).cuda()
+    predicted = torch.zeros_like(score).cuda().float()
     for b in range(score.size(0)):
         for h in range(score.size(1)):
             value, indice = score[b, h].max(0)
@@ -507,14 +505,9 @@ def eval_acc(score, target, weight, th =0.5):
         num_negative = float(target.size(1)*target.size(2) - num_positive)
         num_tp = float(((predicted[b, :, :] == target[b, :, :]) + (target[b, :, :] == 1.0)).eq(2).sum())
         num_tn = float(((predicted[b, :, :] == target[b, :, :]) + (target[b, :, :] == 0.0)).eq(2).sum())
-        # count_tn += num_tn
-        # count_tp += num_tp
 
-        acc.append((num_tp * float(weight[b, 1, 0, 0]) + num_tn * float(weight[b, 0, 0, 0]))/
+        acc.append(1.0*(num_tp * float(weight[b, 1, 0, 0]) + num_tn * float(weight[b, 0, 0, 0]))/
                    (num_positive * float(weight[b, 1, 0, 0]) + num_negative * float(weight[b, 0, 0, 0])))
-
-    # print('tn:', count_tn)
-    # print('tp:', count_tp)
 
     return predicted, np.mean(np.array(acc))
 

@@ -202,7 +202,7 @@ def main(args):
 
                     test_loss.append(float(loss.item()))
                     # scores = F.sigmoid(tag_scores)
-                    predicted, curr_acc = eval_acc(tag_scores.detach(), target.float().detach(), weight.detach())
+                    predicted, curr_acc = eval_acc(tag_scores.float().detach(), target.float().detach(), weight.detach())
                     acc.append(curr_acc)
 
                     # calculate J value
@@ -269,8 +269,8 @@ if __name__ == '__main__':
     # train configs
     parser.add_argument('-b', dest='batch_size', default=1, type=int, help='batch size')
     parser.add_argument('--epochs', dest='epochs', default=20, type=int, help='number of training epochs')
-    parser.add_argument('--print_test', dest='print_test', default=2000, type=int, help='test frequency')
-    parser.add_argument('--print_train', dest='print_train', default=1000, type=int, help='training print frequency')
+    parser.add_argument('--print_test', dest='print_test', default=20, type=int, help='test frequency')
+    parser.add_argument('--print_train', dest='print_train', default=10, type=int, help='training print frequency')
     parser.add_argument('--logs_path', dest='logs_path', default=os.path.join(curr_path, 'log/'), help='log files path')
     parser.add_argument('--save_path', dest='save_path', default=os.path.join(curr_path, 'output/'), help='save path')
     parser.add_argument('--save_name', dest='save_name', default='DHN', help='save folder name')
