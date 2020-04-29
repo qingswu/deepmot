@@ -13,7 +13,10 @@ import torch.optim as optim
 from real_dataset import RealData
 import torch
 import numpy as np
-from tensorboardX import SummaryWriter
+try:
+    from tensorboardX import SummaryWriter
+except:
+    from torch.utils.tensorboard import SummaryWriter
 from utils import adjust_learning_rate, eval_acc
 # from loss.DICE import soft_dice_loss
 from binaryFocalloss import weighted_binary_focal_entropy
