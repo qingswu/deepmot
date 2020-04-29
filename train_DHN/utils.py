@@ -505,9 +505,9 @@ def eval_acc(score, target, weight, th=0.5):
         num_negative = float(target.size(1)*target.size(2) - num_positive)
         num_tp = float(((predicted[b, :, :] == target[b, :, :]).float() + (target[b, :, :] == 1.0).float()).eq(2).sum())
         num_tn = float(((predicted[b, :, :] == target[b, :, :]).float() + (target[b, :, :] == 0.0).float()).eq(2).sum())
-
         acc.append(1.0*(num_tp * float(weight[b, 1, 0, 0]) + num_tn * float(weight[b, 0, 0, 0]))/
                    (num_positive * float(weight[b, 1, 0, 0]) + num_negative * float(weight[b, 0, 0, 0])))
+
     return predicted, np.mean(np.array(acc))
 
 

@@ -444,6 +444,146 @@ class Tracker():
                     t.pos[0, 2] = cxp_new + wp / 2
                     t.pos[0, 3] = cyp_new + hp / 2
 
+    def step_pub(self, blob):
+        """This function should be called every timestep to perform tracking with a blob = current frame
+        containing the image information.
+        """
+
+        # print("I am grere !!!!!!!!!!!!!!!!")
+        for t in self.tracks:
+            t.last_pos = t.pos.clone()
+
+        ###########################
+        # Look for new detections #
+        ###########################
+        self.obj_detect.load_image(blob['data'][0], blob['im_info'][0])
+        if self.public_detections:
+            dets = blob['dets']
+            if len(dets) > 0:
+                dets = torch.cat(dets, 0)[:, :4]
+                _, scores, bbox_pred, rois = self.obj_detect.test_rois(dets)
+            else:
+                rois = torch.zeros(0).cuda()
+        else:
+            _, scores, bbox_pred, rois = self.obj_detect.detect()
+
+        if rois.nelement() > 0:
+            boxes = bbox_transform_inv(rois, bbox_pred)
+            boxes = clip_boxes(Variable(boxes), blob['im_info'][0][:2]).data
+
+            # Filter out tracks that have too low person score
+            # print(scores.shape)
+            if scores.shape[1] > 2:
+                # print("yoyoyo")
+                boxes = boxes[:, 15 * 4:(15 + 1) * 4]
+                scores = scores[:, 15]
+            else:
+                boxes = boxes[:, self.cl * 4:(self.cl + 1) * 4]
+                scores = scores[:, self.cl]
+            # scores = scores[:, self.cl]
+            inds = torch.gt(scores, self.detection_person_thresh).nonzero().view(-1)
+        else:
+            inds = torch.zeros(0).cuda()
+
+        if inds.nelement() > 0:
+            # boxes = boxes[inds]
+            det_pos = boxes[inds]
+            det_scores = scores[inds]
+        else:
+            det_pos = torch.zeros(0).cuda()
+            det_scores = torch.zeros(0).cuda()
+
+        ##################
+        # Predict tracks #
+        ##################
+        num_tracks = 0
+        nms_inp_reg = torch.zeros(0).cuda()
+        if len(self.tracks):
+            # align
+            if self.do_align:
+                # print("doing align")
+                self.align(blob)
+            # apply motion model
+            if self.motion_model:
+                self.motion()
+            # regress
+            person_scores = self.regress_tracks(blob)
+
+            if len(self.tracks):
+
+                # create nms input
+                # new_features = self.get_appearances(blob)
+
+                # nms here if tracks overlap
+                nms_inp_reg = torch.cat((self.get_pos(), person_scores.add_(3).view(-1, 1)), 1)
+                keep = nms(nms_inp_reg, self.regression_nms_thresh)
+
+                self.tracks_to_inactive([self.tracks[i]
+                                         for i in list(range(len(self.tracks)))
+                                         if i not in keep])
+
+                if keep.nelement() > 0:
+                    nms_inp_reg = torch.cat(
+                        (self.get_pos(), torch.ones(self.get_pos().size(0)).add_(3).view(-1, 1).cuda()), 1)
+                    new_features = self.get_appearances(blob)
+
+                    self.add_features(new_features)
+                    num_tracks = nms_inp_reg.size(0)
+                else:
+                    nms_inp_reg = torch.zeros(0).cuda()
+                    num_tracks = 0
+
+        #####################
+        # Create new tracks #
+        #####################
+
+        # !!! Here NMS is used to filter out detections that are already covered by tracks. This is
+        # !!! done by iterating through the active tracks one by one, assigning them a bigger score
+        # !!! than 1 (maximum score for detections) and then filtering the detections with NMS.
+        # !!! In the paper this is done by calculating the overlap with existing tracks, but the
+        # !!! result stays the same.
+        if det_pos.nelement() > 0:
+            nms_inp_det = torch.cat((det_pos, det_scores.view(-1, 1)), 1)
+        else:
+            nms_inp_det = torch.zeros(0).cuda()
+        if nms_inp_det.nelement() > 0:
+            keep = nms(nms_inp_det, self.detection_nms_thresh)
+            nms_inp_det = nms_inp_det[keep]
+            # check with every track in a single run (problem if tracks delete each other)
+            for i in range(num_tracks):
+                nms_inp = torch.cat((nms_inp_reg[i].view(1, -1), nms_inp_det), 0)
+                keep = nms(nms_inp, self.detection_nms_thresh)
+                keep = keep[torch.ge(keep, 1)]
+                if keep.nelement() == 0:
+                    nms_inp_det = nms_inp_det.new(0)
+                    break
+                nms_inp_det = nms_inp[keep]
+
+        if nms_inp_det.nelement() > 0:
+            new_det_pos = nms_inp_det[:, :4]
+            new_det_scores = nms_inp_det[:, 4]
+
+            # try to redientify tracks
+            new_det_pos, new_det_scores, new_det_features = self.reid(blob, new_det_pos, new_det_scores)
+
+            # add new
+            if new_det_pos.nelement() > 0:
+                self.add(new_det_pos, new_det_scores, new_det_features)
+
+
+        for t in self.tracks:
+            track_ind = int(t.id)
+            if track_ind not in self.results.keys():
+                self.results[track_ind] = {}
+            pos = t.pos[0] / blob['im_info'][0][2]
+            sc = t.score
+            self.results[track_ind][self.im_index] = np.concatenate([pos.cpu().numpy(), np.array([sc])])
+
+        self.im_index += 1
+        self.last_image = blob['data'][0][0]
+
+        self.clear_inactive()
+
     def step_pub_reid(self, blob):
         """This function should be called every timestep to perform tracking with a blob = current frame
         containing the image information.
