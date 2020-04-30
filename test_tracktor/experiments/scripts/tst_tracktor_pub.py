@@ -132,9 +132,6 @@ def my_main(tracktor, siamese, _config):
     for sequence in Datasets(tracktor['dataset']):
         tracker.reset()
 
-        if 'SDP' not in sequence._dets[:-2] and "RAW" not in sequence._dets:
-            continue
-
         if "15" in tracktor['dataset']:
             if os.path.exists(os.path.join(output_dir, sequence._seq_name + '.txt')):
                 continue
