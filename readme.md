@@ -9,7 +9,7 @@
 
 
 <div align="center">
-  <img src="https://gitlab.inria.fr/yixu/deepmot/-/raw/master/teaser.pdf" width="900px" />
+  <img src="https://gitlab.inria.fr/yixu/deepmot/-/raw/master/teaser.pdf" width="800px" />
 </div>
 
 
