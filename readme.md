@@ -12,6 +12,21 @@
   <img src="https://gitlab.inria.fr/yixu/deepmot/-/raw/master/teaser.pdf" width="900px" />
 </div>
 
+
+### Bibtex
+If you find this code useful, please star the project and consider citing:
+
+```
+@misc{xu2019train,
+    title={How To Train Your Deep Multi-Object Tracker},
+    author={Yihong Xu and Aljosa Osep and Yutong Ban and Radu Horaud and Laura Leal-Taixe and Xavier Alameda-Pineda},
+    year={2019},
+    eprint={1906.06618},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV}
+}
+```
+
 ## Environment setup <a name="environment-setup">
 This code has been tested on Ubuntu 16.04, Python 3.6, Pytorch=0.4.1, CUDA 9.2, GTX 1080Ti, Titan X, and RTX Titan GPUs.
 
@@ -185,24 +200,9 @@ MOT16/17 private detections:
 **Note:** 
 - the results can be slightly different depending on the running environment.
 
-
-### Bibtex
-If you find this code useful, please star the project and consider citing:
-
-```
-@misc{xu2019train,
-    title={How To Train Your Deep Multi-Object Tracker},
-    author={Yihong Xu and Aljosa Osep and Yutong Ban and Radu Horaud and Laura Leal-Taixe and Xavier Alameda-Pineda},
-    year={2019},
-    eprint={1906.06618},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
-}
-```
-
 ## Demo <a name="demo">
 <div align="center">
-  <img src="https://gitlab.inria.fr/yixu/deepmot/-/raw/obsolete/demo.gif?inline=false" width="800px" />
+  <img src="https://gitlab.inria.fr/yixu/deepmot/-/raw/master/trackingresults.gif?inline=false" width="800px" />
 </div>
 
 ## Acknowledgement <a name="Acknowledgement">
